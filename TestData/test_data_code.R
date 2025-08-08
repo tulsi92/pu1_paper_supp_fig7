@@ -45,7 +45,7 @@ sampled_columns <- sample(colnames(alldat), 3000, replace = FALSE)
 alldat = alldat[grep("^LOC|^MT-|^RP[0-9]|^BC[0-9]|-PS",rownames(alldat),invert=T), sampled_columns]
 
 ## Randomly sample cells from seurat object to make test dataset
-# sampled_cells <- sample(colnames(datobj_olah_mic_subset), 3000, replace = FALSE)
+# sampled_cells <- sample(colnames(datobj_olah_mic_subset), 500, replace = FALSE)
 # datobj_olah_mic_subset = subset(datobj_olah_mic_subset, cells = sampled_cells)
 
 datobj_olah_mic_subset <- readRDS("microglia_reprocessed_subset.rds")
