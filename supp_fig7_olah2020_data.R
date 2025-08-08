@@ -99,8 +99,15 @@ b <- DimPlot(object = datobj_olah, reduction = "umap", group.by = "cluster_label
 
 plot_grid(a, b)
 
-## Removes additional outlier cells
+## Removes additional outlier cells and add our cluster assignments to metadata
 our_cluster_assignments <- read_tsv("our_cluster_assignments.txt")
+our_cluster_assignments <- read_tsv("our_cluster_assignments.txt")
+
+olah_metadata <- datobj_olah@meta.data |>
+  left_join(our_cluster_assignments, by = "cell_id")
+
+datobj_olah_mic <- subset(datobj_olah, cells = our_cluster_assignments$cell_id)
+datobj_olah_mic <- AddMetaData(datobj_olah_mic, metadata = olah_metadata$new_cluster_name, col.name = "new_cluster_name")
 
 Idents(datobj_olah_mic) <- "new_cluster_name"
 
