@@ -219,7 +219,7 @@ for(i in 1:ncol(genesets_from_papers)) {
 
 genelists_clean <- lapply(genelists, function(col)col[!is.na(col)])
 
-homeostatic_genes <- c("MS4A6A", "CSF1R","CD33","CX3CR1","AIF1","TMEM119","P2RY12")
+homeostatic_genes <- c("MS4A6A","CSF1R","CD33","CX3CR1","AIF1","TMEM119","P2RY12")
 
 ## Very few cells expressing lymphoid marker genes
 # FeaturePlot(datobj_olah_mic, features = c("CD28","PDCD1","CD52","PRKCQ","CD5",
@@ -239,7 +239,11 @@ FeaturePlot(datobj_olah_mic, features = "Homeostatic_signature1", label = TRUE, 
   scale_colour_gradientn(colours = rev(brewer.pal(n = 11, name = "RdBu")))
 
 ## Consensus DAM signature
-datobj_olah_mic <- AddModuleScore(datobj_olah_mic, features = list(intersect(genelists_clean$Consensus_DAM_signature, rownames(datobj_olah_mic))), name = "Consensus_DAM_signature", ctrl = 100, seed = 123456)
+Consensus_DAM_signature <- c("APOE","B2M","CCL3","CTSB","CTSA","CTSD","CTSL","CTSZ","LGALS3","MITF",
+                             "TIMP2","TREM2","SPP1","CD9","ITGAX","LPL","LILRB4","CD68","CST7","BHLHE40",
+                             "CXCR4","IGF1","HIF1A","ANXA5","CTSS")
+
+datobj_olah_mic <- AddModuleScore(datobj_olah_mic, features = list(intersect(Consensus_DAM_signature, rownames(datobj_olah_mic))), name = "Consensus_DAM_signature", ctrl = 100, seed = 123456)
 
 FeaturePlot(datobj_olah_mic, features = "Consensus_DAM_signature1", label = TRUE, repel = TRUE, order = TRUE) +
   scale_colour_gradientn(colours = rev(brewer.pal(n = 11, name = "RdBu")))
@@ -381,9 +385,11 @@ DotPlot(datobj_olah_mic, features = combined_genelist, col.min = -1, col.max = 1
 
 # saveRDS(datobj_olah_mic, "/Users/tulsi/Library/Mobile Documents/com~apple~CloudDocs/Projects/PU1 Project/2024-12-08.Human_replication_final_object_decision/olah2020_microglia_reprocessed_012925.rds")
 
-## Compare reprocessed clusters to original published clusters using scmap
-library(SummarizedExperiment)
+#################################################################
+## Compare reprocessed clusters to original published clusters ##
+#################################################################
 library(scmap)
+library(SummarizedExperiment)
 
 ## Convert to SCE
 sce <- as.SingleCellExperiment(datobj_olah_mic)
