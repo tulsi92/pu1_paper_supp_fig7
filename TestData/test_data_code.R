@@ -34,38 +34,32 @@ library(pheatmap)
 packageVersion("Seurat")
 set.seed(42)
 
-datobj_olah_mic <- readRDS("/Users/tulsi/Library/Mobile Documents/com~apple~CloudDocs/Projects/PU1 Project/2024-10-31.Human_replication/archive/olah2020_microglia_reprocessed_mic_clusters_only.rds")
-
-setwd("/Users/tulsi/Library/Mobile Documents/com~apple~CloudDocs/Projects/")
+datobj_olah_mic <- readRDS("olah2020_microglia_reprocessed_mic_clusters_only.rds")
 
 ################
 ## 2025-08-07 ##
 ################
 ## Randomly sample columns from csv to make test dataset
-alldat = read.csv("/Users/tulsi/Library/Mobile Documents/com~apple~CloudDocs/Projects/PU1 Project/2025-08-07 Github upload/SupplementaryData14.csv",as.is=T,row.names=1,header=T)
+alldat = read.csv("SupplementaryData14.csv",as.is=T,row.names=1,header=T)
 sampled_columns <- sample(colnames(alldat), 3000, replace = FALSE)
 alldat = alldat[grep("^LOC|^MT-|^RP[0-9]|^BC[0-9]|-PS",rownames(alldat),invert=T), sampled_columns]
 
 ## Randomly sample cells from object to make test dataset
-# sampled_cells <- sample(colnames(olah2020_microglia_reprocessed_012925), 3000, replace = FALSE)
-# olah2020_microglia_reprocessed_012925_subset = subset(olah2020_microglia_reprocessed_012925, cells = sampled_cells)
-# DimPlot(olah2020_microglia_reprocessed_012925_subset, reduction = "umap", label = TRUE, label.size = 3, repel = TRUE, group.by = "our_cluster_assignment") + theme(legend.position = "right")
+# sampled_cells <- sample(colnames(datobj_olah_mic), 3000, replace = FALSE)
+# datobj_olah_mic_subset = subset(datobj_olah_mic, cells = sampled_cells)
 
 ################
 ## 2024-12-17 ##
 ################
 ## Object processing
-
 ################################################
 ## Process using similar code from Olah paper ##
 ################################################
 ###Step 1: load data, remove genes often associated with technical artifacts, and filter by total UMI count###
-# alldat = read.csv("/Users/tulsi/Library/Mobile Documents/com~apple~CloudDocs/Projects/PU1 Project/2025-08-07 Github upload/SupplementaryData14.csv",as.is=T,row.names=1,header=T)
-# alldat = alldat[grep("^LOC|^MT-|^RP[0-9]|^BC[0-9]|-PS",rownames(alldat),invert=T),]
 alldat = alldat[,which(colSums(alldat)>=1000)]
 alldat_cpm = sweep(alldat,2,colSums(alldat),"/")*10^6
-olah2020_annot <- read_tsv("/Users/tulsi/Library/Mobile Documents/com~apple~CloudDocs/Projects/PU1 Project/2025-08-07 Github upload/cluster_annotation.txt")
-batchval = read.csv("/Users/tulsi/Library/Mobile Documents/com~apple~CloudDocs/Projects/PU1 Project/2024-10-31.Human_replication/41467_2020_19737_MOESM17_ESM.csv",header=T,row.names=1)
+olah2020_annot <- read_tsv("cluster_annotation.txt")
+batchval = read.csv("41467_2020_19737_MOESM17_ESM.csv",header=T,row.names=1)
 batchval_clusters <- batchval %>% 
   rownames_to_column("cell_id") %>%
   left_join(olah2020_annot, by = c("cluster_label" = "cluster"))
@@ -87,7 +81,7 @@ datobj_olah <- NormalizeData(datobj_olah)
 datobj_olah <- ScaleData(datobj_olah,vars.to.regress=c("nCount_RNA", "batch"), features = rownames(datobj_olah)) #nUMI not in object
 rownames(datobj_olah@assays$RNA@data) = rownames(alldat)
 vargenes=rownames(datobj_olah@assays$RNA@layers$data)[which(apply(datobj_olah@assays$RNA@layers$data,1,var)>apply(datobj_olah@assays$RNA@layers$data,1,mean))]
-####
+##
 datobj_olah <- FindVariableFeatures(object = datobj_olah, selection.method = "vst", verbose = TRUE)
 datobj_olah <- RunPCA(object = datobj_olah, pc.genes = vargenes, do.print = FALSE)
 datobj_olah <- RunUMAP(object = datobj_olah, reduction = 'pca', dims = 1:20)
@@ -124,7 +118,7 @@ b <- DimPlot(object = datobj_olah, reduction = "umap", group.by = "cluster_label
 
 cowplot::plot_grid(a, b)
 
-our_cells <- colnames(olah2020_microglia_reprocessed_012925)
+our_cells <- colnames(datobj_olah)
 
 datobj_olah_mic_reclust <- subset(datobj_olah, cells = our_cells)
 
@@ -142,8 +136,6 @@ b = DimPlot(object = datobj_olah_mic, reduction = "umap")
 cowplot::plot_grid(a, b)
 
 table(datobj_olah_mic_reclust$seurat_clusters, datobj_olah_mic_reclust$annotation)
-# table(datobj_olah_mic$seurat_clusters, datobj_olah_mic$annotation)
-table(datobj_olah_mic_reclust$seurat_clusters, olah2020_microglia_reprocessed_012925_subset$seurat_clusters)
 
 ################
 ## 2025-01-29 ##
@@ -203,32 +195,12 @@ DotPlot(datobj_olah_mic_reclust, features = combined_genelist, col.min = -1, col
     legend.key.height = unit(0.4, "cm"),
     legend.key.width = unit(0.5, "cm"))
 
-##################
-## Marker genes ##
-##################
-## microglial subset cell type markers from scrnaseq papers
-genesets_from_papers_consensus <- read_xlsx("~/Library/Mobile Documents/com~apple~CloudDocs/Projects/PU1 Project/2024-10-31.Human_replication/20241003.Myeloid_Genesets_JMC.xlsx", sheet = "genesets")
-genesets_from_papers <- read_xlsx("~/Library/Mobile Documents/com~apple~CloudDocs/Projects/PU1 Project/2024-10-31.Human_replication/20240903_Myeloid_Genesets_APD.xlsx", sheet = "genesets")
-genesets_from_papers$Consensus_DAM_signature <- genesets_from_papers_consensus$Consensus_DAM_signature
-
-## convert table of genesets to genelists
-genelists <- list()
-for(i in 1:ncol(genesets_from_papers)) {   
-  genelists[[i]] <- genesets_from_papers[ , i]
-}; names(genelists) <- colnames(genesets_from_papers) 
-
-genelists_clean <- lapply(genelists, function(col)col[!is.na(col)])
-
-homeostatic_genes <- c("MS4A6A","CSF1R","CD33","CX3CR1","AIF1","TMEM119","P2RY12")
-
-## Very few cells expressing lymphoid marker genes
-# FeaturePlot(datobj_olah_mic, features = c("CD28","PDCD1","CD52","PRKCQ","CD5",
-#                                           "DKK2"), label = TRUE, label.size = 5, 
-#             order = TRUE, repel = TRUE, pt.size = 0.5, cols = c("lightgrey", "red"))
-
 ##################################
 ## Check enrichment of genesets ##
 ##################################
+## microglial subset cell type markers from scrnaseq papers
+homeostatic_genes <- c("MS4A6A","CSF1R","CD33","CX3CR1","AIF1","TMEM119","P2RY12")
+
 datobj_olah_mic <- datobj_olah_mic_reclust
 
 ## Consensus homeostatic signature
@@ -249,21 +221,8 @@ FeaturePlot(datobj_olah_mic, features = "Consensus_DAM_signature1", label = TRUE
   scale_colour_gradientn(colours = rev(brewer.pal(n = 11, name = "RdBu")))
 
 ## Lymphoid signature
-lymphoid_genes1 <- c("CD28", "PDCD1", "CD52", "CD72", "CD5")
-datobj_olah_mic <- AddModuleScore(datobj_olah_mic, features = list(intersect(lymphoid_genes1, rownames(datobj_olah_mic))), name = "Lymphoid_signature1_", ctrl = 100, seed = 123456)
-
-lymphoid_genes2 <- c("CD28", "PDCD1", "CD52", "CD72", "CD5", "DKK2", "TNFSF13B")
-datobj_olah_mic <- AddModuleScore(datobj_olah_mic, features = list(intersect(lymphoid_genes2, rownames(datobj_olah_mic))), name = "Lymphoid_signature2_", ctrl = 100, seed = 123456)
-
-lymphoid_genes3 <- c("CD28", "PDCD1", "CD52", "CD72", "CD5", "DKK2", "TNFSF13B", "PRKCQ")
-datobj_olah_mic <- AddModuleScore(datobj_olah_mic, features = list(intersect(lymphoid_genes3, rownames(datobj_olah_mic))), name = "Lymphoid_signature3_", ctrl = 100, seed = 123456)
-
-lymphoid_genes4 <- c("CD28", "PDCD1", "CD52", "CD72", "CD5", "PRKCQ")
-datobj_olah_mic <- AddModuleScore(datobj_olah_mic, features = list(intersect(lymphoid_genes4, rownames(datobj_olah_mic))), name = "Lymphoid_signature4_", ctrl = 100, seed = 123456)
-
-## Selected lymphoid signature
-lymphoid_genes5 <- c("CD28", "PDCD1", "CD5", "DKK2")
-datobj_olah_mic <- AddModuleScore(datobj_olah_mic, features = list(intersect(lymphoid_genes5, rownames(datobj_olah_mic))), name = "Lymphoid_signature_selected", ctrl = 100, seed = 123456)
+lymphoid_genes <- c("CD28", "PDCD1", "CD5", "DKK2")
+datobj_olah_mic <- AddModuleScore(datobj_olah_mic, features = list(intersect(lymphoid_genes5, rownames(datobj_olah_mic))), name = "Lymphoid_signature", ctrl = 100, seed = 123456)
 
 ###################
 ## Module scores ##
@@ -279,33 +238,12 @@ hom_score <- datobj_olah_mic@meta.data |>
   group_by(our_cluster_assignment) |>
   dplyr::summarize(avg_score_hom = mean(Homeostatic_signature1, na.rm = TRUE))
 
-lymphoid_score_1 <- datobj_olah_mic@meta.data |> 
-  dplyr::select(our_cluster_assignment, Lymphoid_signature1_1) |>
-  group_by(our_cluster_assignment) |>
-  dplyr::summarize(avg_score_lymphoid_1 = mean(Lymphoid_signature1_1, na.rm = TRUE))
-
-lymphoid_score_2 <- datobj_olah_mic@meta.data |> 
-  dplyr::select(our_cluster_assignment, Lymphoid_signature2_1) |>
-  group_by(our_cluster_assignment) |>
-  dplyr::summarize(avg_score_lymphoid_2 = mean(Lymphoid_signature2_1, na.rm = TRUE))
-
-lymphoid_score_3 <- datobj_olah_mic@meta.data |> 
-  dplyr::select(our_cluster_assignment, Lymphoid_signature3_1) |>
-  group_by(our_cluster_assignment) |>
-  dplyr::summarize(avg_score_lymphoid_3 = mean(Lymphoid_signature3_1, na.rm = TRUE))
-
-lymphoid_score_4 <- datobj_olah_mic@meta.data |> 
-  dplyr::select(our_cluster_assignment, Lymphoid_signature4_1) |>
-  group_by(our_cluster_assignment) |>
-  dplyr::summarize(avg_score_lymphoid_4 = mean(Lymphoid_signature4_1, na.rm = TRUE))
-
 lymphoid_score_selected <- datobj_olah_mic@meta.data |> 
   dplyr::select(our_cluster_assignment, Lymphoid_signature_selected1) |>
   group_by(our_cluster_assignment) |>
   dplyr::summarize(avg_score_lymphoid_selected = mean(Lymphoid_signature_selected1, na.rm = TRUE))
 
 pu1_expression <- FetchData(datobj_olah_mic, vars = "SPI1", layer = "data") |> #lognorm counts
-  rownames_to_column("cell_id") |>
   distinct(cell_id, .keep_all = TRUE) |>
   left_join(datobj_olah_mic@meta.data |> rownames_to_column("cell_id")) |> 
   dplyr::select(our_cluster_assignment, SPI1) |> 
@@ -314,10 +252,6 @@ pu1_expression <- FetchData(datobj_olah_mic, vars = "SPI1", layer = "data") |> #
 
 module_score_comparison <- dam_score |>
   left_join(hom_score) |>
-  # left_join(lymphoid_score_1) |>
-  # left_join(lymphoid_score_2) |>
-  # left_join(lymphoid_score_3) |>
-  # left_join(lymphoid_score_4) |>
   left_join(lymphoid_score_selected) |>
   left_join(pu1_expression)
 
@@ -382,8 +316,6 @@ DotPlot(datobj_olah_mic, features = combined_genelist, col.min = -1, col.max = 1
     legend.text = element_text(family = 'Helvetica', size = 10),
     legend.key.height = unit(0.4, "cm"),
     legend.key.width = unit(0.5, "cm"))
-
-# saveRDS(datobj_olah_mic, "/Users/tulsi/Library/Mobile Documents/com~apple~CloudDocs/Projects/PU1 Project/2024-12-08.Human_replication_final_object_decision/olah2020_microglia_reprocessed_012925.rds")
 
 #################################################################
 ## Compare reprocessed clusters to original published clusters ##
