@@ -453,17 +453,3 @@ ggplot(conf_df, aes(x = Var2, y = Var1, fill = Percent)) +
     axis.text.x = element_text(angle = 45, hjust = 1),
     panel.grid = element_blank())
 
-## Bubble plot
-ggplot(conf_df, aes(x = Var2, y = Var1)) +
-  geom_point(aes(size = Freq, fill = Percent), shape = 21, color = "black") +
-  scale_size(range = c(1, 12), name = "Cell Count") +
-  scale_fill_gradient(low = "white", high = "steelblue", name = "Percent") +
-  scale_y_discrete(limits = rev(levels(conf_df$Var1))) +  # reverse y-axis
-  labs(
-    title = "",
-    x = "New Olah Clusters",
-    y = "Original Olah Clusters") +
-  theme_bw() +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1),
-    panel.grid = element_blank())
