@@ -382,6 +382,7 @@ DotPlot(datobj_olah_mic, features = combined_genelist, col.min = -1, col.max = 1
 # saveRDS(datobj_olah_mic, "/Users/tulsi/Library/Mobile Documents/com~apple~CloudDocs/Projects/PU1 Project/2024-12-08.Human_replication_final_object_decision/olah2020_microglia_reprocessed_012925.rds")
 
 ## Compare reprocessed clusters to original published clusters using scmap
+library(SummarizedExperiment)
 library(scmap)
 
 ## Convert to SCE
