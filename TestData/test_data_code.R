@@ -40,9 +40,9 @@ datobj_olah_mic_subset <- readRDS("olah2020_microglia_reprocessed_mic_clusters_o
 ## 2025-08-07 ##
 ################
 ## Randomly sample columns from csv to make test dataset
-alldat = read.csv("SupplementaryData14.csv",as.is=T,row.names=1,header=T)
-sampled_columns <- sample(colnames(alldat), 3000, replace = FALSE)
-alldat = alldat[grep("^LOC|^MT-|^RP[0-9]|^BC[0-9]|-PS",rownames(alldat),invert=T), sampled_columns]
+# alldat = read.csv("SupplementaryData14.csv",as.is=T,row.names=1,header=T)
+# sampled_columns <- sample(colnames(alldat), 500, replace = FALSE)
+# alldat = alldat[grep("^LOC|^MT-|^RP[0-9]|^BC[0-9]|-PS",rownames(alldat),invert=T), sampled_columns]
 
 ## Randomly sample cells from seurat object to make test dataset
 # sampled_cells <- sample(colnames(datobj_olah_mic_subset), 500, replace = FALSE)
