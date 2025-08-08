@@ -36,6 +36,8 @@ set.seed(42)
 
 datobj_olah_mic <- readRDS("/Users/tulsi/Library/Mobile Documents/com~apple~CloudDocs/Projects/PU1 Project/2024-10-31.Human_replication/archive/olah2020_microglia_reprocessed_mic_clusters_only.rds")
 
+setwd("/Users/tulsi/Library/Mobile Documents/com~apple~CloudDocs/Projects/")
+
 ################
 ## 2025-08-07 ##
 ################
@@ -43,6 +45,11 @@ datobj_olah_mic <- readRDS("/Users/tulsi/Library/Mobile Documents/com~apple~Clou
 alldat = read.csv("/Users/tulsi/Library/Mobile Documents/com~apple~CloudDocs/Projects/PU1 Project/2025-08-07 Github upload/SupplementaryData14.csv",as.is=T,row.names=1,header=T)
 sampled_columns <- sample(colnames(alldat), 3000, replace = FALSE)
 alldat = alldat[grep("^LOC|^MT-|^RP[0-9]|^BC[0-9]|-PS",rownames(alldat),invert=T), sampled_columns]
+
+## Randomly sample cells from object to make test dataset
+# sampled_cells <- sample(colnames(olah2020_microglia_reprocessed_012925), 3000, replace = FALSE)
+# olah2020_microglia_reprocessed_012925_subset = subset(olah2020_microglia_reprocessed_012925, cells = sampled_cells)
+# DimPlot(olah2020_microglia_reprocessed_012925_subset, reduction = "umap", label = TRUE, label.size = 3, repel = TRUE, group.by = "our_cluster_assignment") + theme(legend.position = "right")
 
 ################
 ## 2024-12-17 ##
@@ -222,8 +229,10 @@ homeostatic_genes <- c("MS4A6A", "CSF1R","CD33","CX3CR1","AIF1","TMEM119","P2RY1
 ##################################
 ## Check enrichment of genesets ##
 ##################################
+datobj_olah_mic <- datobj_olah_mic_reclust
+
 ## Consensus homeostatic signature
-Idents(datobj_olah_mic) <- "new_cluster_name"
+Idents(datobj_olah_mic) <- "our_cluster_assignment"
 datobj_olah_mic <- AddModuleScore(datobj_olah_mic, features = list(intersect(homeostatic_genes, rownames(datobj_olah_mic))), name = "Homeostatic_signature", ctrl = 100, seed = 123456)
 
 FeaturePlot(datobj_olah_mic, features = "Homeostatic_signature1", label = TRUE, repel = TRUE, order = TRUE) +
@@ -257,45 +266,46 @@ datobj_olah_mic <- AddModuleScore(datobj_olah_mic, features = list(intersect(lym
 ###################
 ## Check module scores using reclustered data not annotation from original paper
 dam_score <- datobj_olah_mic@meta.data |> 
-  dplyr::select(new_cluster_name, Consensus_DAM_signature1) |> 
-  group_by(new_cluster_name) |>
+  dplyr::select(our_cluster_assignment, Consensus_DAM_signature1) |> 
+  group_by(our_cluster_assignment) |>
   dplyr::summarize(avg_score_dam = mean(Consensus_DAM_signature1, na.rm = TRUE))
 
 hom_score <- datobj_olah_mic@meta.data |> 
-  dplyr::select(new_cluster_name, Homeostatic_signature1) |>
-  group_by(new_cluster_name) |>
+  dplyr::select(our_cluster_assignment, Homeostatic_signature1) |>
+  group_by(our_cluster_assignment) |>
   dplyr::summarize(avg_score_hom = mean(Homeostatic_signature1, na.rm = TRUE))
 
 lymphoid_score_1 <- datobj_olah_mic@meta.data |> 
-  dplyr::select(new_cluster_name, Lymphoid_signature1_1) |>
-  group_by(new_cluster_name) |>
+  dplyr::select(our_cluster_assignment, Lymphoid_signature1_1) |>
+  group_by(our_cluster_assignment) |>
   dplyr::summarize(avg_score_lymphoid_1 = mean(Lymphoid_signature1_1, na.rm = TRUE))
 
 lymphoid_score_2 <- datobj_olah_mic@meta.data |> 
-  dplyr::select(new_cluster_name, Lymphoid_signature2_1) |>
-  group_by(new_cluster_name) |>
+  dplyr::select(our_cluster_assignment, Lymphoid_signature2_1) |>
+  group_by(our_cluster_assignment) |>
   dplyr::summarize(avg_score_lymphoid_2 = mean(Lymphoid_signature2_1, na.rm = TRUE))
 
 lymphoid_score_3 <- datobj_olah_mic@meta.data |> 
-  dplyr::select(new_cluster_name, Lymphoid_signature3_1) |>
-  group_by(new_cluster_name) |>
+  dplyr::select(our_cluster_assignment, Lymphoid_signature3_1) |>
+  group_by(our_cluster_assignment) |>
   dplyr::summarize(avg_score_lymphoid_3 = mean(Lymphoid_signature3_1, na.rm = TRUE))
 
 lymphoid_score_4 <- datobj_olah_mic@meta.data |> 
-  dplyr::select(new_cluster_name, Lymphoid_signature4_1) |>
-  group_by(new_cluster_name) |>
+  dplyr::select(our_cluster_assignment, Lymphoid_signature4_1) |>
+  group_by(our_cluster_assignment) |>
   dplyr::summarize(avg_score_lymphoid_4 = mean(Lymphoid_signature4_1, na.rm = TRUE))
 
 lymphoid_score_selected <- datobj_olah_mic@meta.data |> 
-  dplyr::select(new_cluster_name, Lymphoid_signature_selected1) |>
-  group_by(new_cluster_name) |>
+  dplyr::select(our_cluster_assignment, Lymphoid_signature_selected1) |>
+  group_by(our_cluster_assignment) |>
   dplyr::summarize(avg_score_lymphoid_selected = mean(Lymphoid_signature_selected1, na.rm = TRUE))
 
 pu1_expression <- FetchData(datobj_olah_mic, vars = "SPI1", layer = "data") |> #lognorm counts
   rownames_to_column("cell_id") |>
+  distinct(cell_id, .keep_all = TRUE) |>
   left_join(datobj_olah_mic@meta.data |> rownames_to_column("cell_id")) |> 
-  dplyr::select(new_cluster_name, SPI1) |> 
-  group_by(new_cluster_name) |>
+  dplyr::select(our_cluster_assignment, SPI1) |> 
+  group_by(our_cluster_assignment) |>
   dplyr::summarize(avg_pu1_expr = mean(SPI1, na.rm = TRUE))
 
 module_score_comparison <- dam_score |>
@@ -320,16 +330,16 @@ module_score_comparison <- module_score_comparison |>
 ###########################################################
 olah_metadata_groups <- datobj_olah_mic@meta.data |>
   mutate(lymphoid_group = case_when(
-    new_cluster_name %in% c("MG1", "MG2", "MG7") ~ "Homeostatic",
-    new_cluster_name %in% c("MG6", "MG8", "MG9") ~ "Lymphoid_Positive_DAM",
-    new_cluster_name %in% c("MG3", "MG4", "MG5") ~ "Lymphoid_Negative_DAM",
+    our_cluster_assignment %in% c("MG1", "MG2", "MG7") ~ "Homeostatic",
+    our_cluster_assignment %in% c("MG6", "MG8", "MG9") ~ "Lymphoid_Positive_DAM",
+    our_cluster_assignment %in% c("MG3", "MG4", "MG5") ~ "Lymphoid_Negative_DAM",
     TRUE ~ NA))
 
 unique(olah_metadata_groups$lymphoid_group)
 
 datobj_olah_mic <- AddMetaData(datobj_olah_mic, metadata = olah_metadata_groups$lymphoid_group, col.name = "lymphoid_group")
 
-table(datobj_olah_mic$new_cluster_name, datobj_olah_mic$lymphoid_group)
+table(datobj_olah_mic$our_cluster_assignment, datobj_olah_mic$lymphoid_group)
 
 Idents(datobj_olah_mic) <- "lymphoid_group"
 
@@ -380,7 +390,7 @@ unique(datobj_olah_mic$cluster_label)
 
 ## Split into reference and query based on the annotation
 colData(sce)$original_clusters <- datobj_olah_mic$annotation
-colData(sce)$new_clusters <- datobj_olah_mic$new_cluster_name
+colData(sce)$new_clusters <- datobj_olah_mic$our_cluster_assignment
 ref_sce <- sce
 query_sce <- sce
 
@@ -409,7 +419,7 @@ query_sce$scmap_prediction <- scmap_results$combined_labs
 
 ## Confusion matrix between original and new clusters
 table(Predicted = query_sce$scmap_prediction, Actual = query_sce$new_clusters)
-table(datobj_olah_mic$annotation, datobj_olah_mic$new_cluster_name)
+table(datobj_olah_mic$annotation, datobj_olah_mic$our_cluster_assignment)
 
 plot(
   getSankey(
@@ -421,7 +431,7 @@ plot(
 ## Confusion matrix plots ##
 ############################
 ## Create contingency table and calculate percentages by row
-conf_mat <- table(datobj_olah_mic$annotation, datobj_olah_mic$new_cluster_name)
+conf_mat <- table(datobj_olah_mic$annotation, datobj_olah_mic$our_cluster_assignment)
 
 conf_df <- as.data.frame(conf_mat) %>%
   group_by(Var1) %>%
@@ -457,4 +467,3 @@ ggplot(conf_df, aes(x = Var2, y = Var1)) +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1),
     panel.grid = element_blank())
-
