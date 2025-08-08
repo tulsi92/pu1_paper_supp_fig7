@@ -34,7 +34,7 @@ library(pheatmap)
 packageVersion("Seurat")
 set.seed(42)
 
-datobj_olah_mic_subset <- readRDS("olah2020_microglia_reprocessed_mic_clusters_only.rds")
+datobj_olah_mic_subset <- readRDS("seuobj_subset.rds")
 
 ################
 ## 2025-08-07 ##
